@@ -8,6 +8,9 @@
 
 using namespace std;
 
+constexpr uint32_t df_WIDTH = 5;
+constexpr uint32_t df_HEIGHT = 5;
+
 template<template<typename> typename Column, typename T>
 class DataFrame {
 private:
@@ -25,9 +28,9 @@ public:
 		data_vec = _vectors;
 	};
 	// Destructor
-	~DataFrame() {
+	/*~DataFrame() {
 		delete data_vec;
-	};
+	};*/
 
 	// 1.2 - Load Data
 	// Loads vectors data into data_vec and overwrites original data
@@ -74,16 +77,26 @@ public:
 	Column<T>& operator[](uint32_t column_idx) {
 		return data_vec->at(column_idx);
 	}
-	/*Column<T>& operator[](string column_name) {
+	Column<T>& operator[](string column_name) {
+		int column_idx = find_column(column_name);
 		return data_vec->at(column_idx);
-	}*/
+	}
+
+	int find_column(string column_name) {
+		for (size_t i = 0; i < data_vec->size(); i++) {
+			if (data_vec->at(i).column_name_getter() == column_name) {
+				return i;
+			}
+		}
+		return -1;
+	}
 
 	// 1.7 - Data Frame Metadata
 	int size() {
 		return (data_vec.size() * data_vec[0]->size());
 	}
 	int shape() {
-		return (data_vec[0]->size());
+		return (data_vec->size());
 	}
 
 	vector<Column<T>> get_dataframe() {
@@ -94,49 +107,58 @@ public:
 template<typename T>
 class Column : public vector<T> {
 private:
-	vector<T> data_vector;
+	vector<T> data_vec;
+	string column_name;
 	using vector<T>::vector;
 public:
+	Column() {};
 	Column(vector<T> _vector) {
-		vector = data_vector;
+		data_vec = _vector;
+	}
+
+	void column_name_setter(string name) {
+		column_name = name;
+	}
+	string column_name_getter() {
+		return column_name;
 	}
 
 	int min() {
 		int min = INT_MAX;
-		for (int32_t i = 0; i < data_vector.size(); i++) {
-			if (data_vector[i] < min) {
-				min = data_vector[i];
+		for (int32_t i = 0; i < data_vec.size(); i++) {
+			if (data_vec[i] < min) {
+				min = data_vec[i];
 			}
 		}
 		return min;
 	}
 	int max() {
 		int max = INT_MIN;
-		for (int32_t i = 0; i < data_vector.size(); i++) {
-			if (data_vector[i] > max) {
-				max = data_vector[i];
+		for (int32_t i = 0; i < data_vec.size(); i++) {
+			if (data_vec[i] > max) {
+				max = data_vec[i];
 			}
 		}
 		return max;
 	}
 	double mean() {
 		int sum = 0;
-		for (size_t i = 0; i < data_vector.size(); i++) {
-			sum += data_vector[i];
+		for (size_t i = 0; i < data_vec.size(); i++) {
+			sum += data_vec[i];
 		}
-		return sum / (data_vector.size());
+		return sum / (data_vec.size());
 	}
 	int median() {
-		vector<T> _vector = data_vector;
+		vector<T> _vector = data_vec;
 		sort(_vector.begin(), _vector.endf());
 		return _vector[_vector.size() / 2];
 	}
 	int mode() {
-		vector<T> _vector = data_vector;
+		vector<T> _vector = data_vec;
 		sort(_vector.begin(), _vector.endf());
 
 		int max_count = 1, res = _vector[0], curr_count = 1;
-		for (int i = 1; i < n; i++) {
+		for (int i = 1; i < _vector.size(); i++) {
 			if (_vector[i] == _vector[i - 1])
 				curr_count++;
 			else {
@@ -152,7 +174,7 @@ public:
 		if (curr_count > max_count)
 		{
 			max_count = curr_count;
-			res = _vector[n - 1];
+			res = _vector[_vector.size() - 1];
 		}
 
 		return res;
@@ -161,24 +183,28 @@ public:
 };
 
 // Generates individual random numbers
-string get_random_number() {
+int get_random_number() {
 	random_device dev;
 	mt19937 twister(dev());
-	uniform_int_distribution<int32_t> dist(0, 9);
+	uniform_int_distribution<uint32_t> dist(0, 9);
 
-	return to_string(dist(twister));
+	return (dist(twister));
 }
 
 // Assigns the values of each index of a 2D vector to random values
 template<typename T>
 void create_random_table(vector<Column<T>>& vectors) {
 	for (int32_t i = 0; i < 5; i++) {
-		vectors[0][i] = "-";
-	}
-	for (int32_t i = 1; i < 5; i++) {
 		for (int32_t j = 0; j < 5; j++) {
-			vectors[i][j] = get_random_number();
+			vectors[i][j] = (T)get_random_number();
 		}
+	}
+}
+
+template<typename T>
+void create_random_array(Column<T>& vector) {
+	for (int32_t i = 0; i < 5; i++) {
+		vector[i].push_back((T)get_random_number());
 	}
 }
 
@@ -194,19 +220,16 @@ void print_2d_vector(const vector<Column<T>>& vectors) {
 }
 
 int main() {
-	vector<Column<string>> vectors(5, Column<string>(5));
+	vector<Column<int32_t>> vectors(df_WIDTH, Column<int32_t>(df_HEIGHT));
 
 	create_random_table(vectors);
 
-	DataFrame<Column, string> df(&vectors);
-
-	print_2d_vector(vectors);
-
-	string column_names[] = { "col1", "col2", "col3" };
-	df.set_columns(column_names, size(column_names));
+	DataFrame<Column, int32_t> df(&vectors);
 
 	print_2d_vector(df.get_dataframe());
 
-	cout << "MIN:\n";
-	df[0].min();
+	Column<int32_t> vec;
+	create_random_array(vec);
+	
+	df.load_data(&vec);
 }
