@@ -38,21 +38,21 @@ public:
 		data_vec->clear();
 		data_vec = _vectors;
 	}
-	void load_data(Column<T> *_vector) {
+	void load_data(Column<T> _vector) {
 		data_vec->clear();
 		data_vec->push_back(_vector);
 	}
 	// Adds data to the data_vec, that being a column of data.
-	void add_data(Column<T> *_vector) {
+	void add_data(Column<T> _vector) {
 		data_vec->push_back(_vector);
 	}
-	void add_data(vector<Column<T>> *_vectors) {
+	void add_data(vector<Column<T>> _vectors) {
 		for (auto iter : _vectors) {
 			data_vec->push_back(iter);
 		}
 	}
 	void add_data(Column<T> _vector, string column_name) {}
-	void add_data(vector<Column<T>> _vectors, string column_name) {}
+	void add_data(vector<Column<T>> _vectors, vector<string> column_names) {}
 
 	// 1.3 - Setting Column Names
 	void set_columns(string column_names[], uint32_t size) {
@@ -93,7 +93,7 @@ public:
 
 	// 1.7 - Data Frame Metadata
 	int size() {
-		return (data_vec.size() * data_vec[0]->size());
+		return (data_vec->size() * data_vec[0]->size());
 	}
 	int shape() {
 		return (data_vec->size());
@@ -194,8 +194,8 @@ int get_random_number() {
 // Assigns the values of each index of a 2D vector to random values
 template<typename T>
 void create_random_table(vector<Column<T>>& vectors) {
-	for (int32_t i = 0; i < 5; i++) {
-		for (int32_t j = 0; j < 5; j++) {
+	for (int32_t i = 0; i < vectors.size(); i++) {
+		for (int32_t j = 0; j < vectors[0].size(); j++) {
 			vectors[i][j] = (T)get_random_number();
 		}
 	}
@@ -204,15 +204,15 @@ void create_random_table(vector<Column<T>>& vectors) {
 template<typename T>
 void create_random_array(Column<T>& vector) {
 	for (int32_t i = 0; i < 5; i++) {
-		vector[i].push_back((T)get_random_number());
+		vector.push_back((T)get_random_number());
 	}
 }
 
 // Prints a 2D vector
 template<typename T>
-void print_2d_vector(const vector<Column<T>>& vectors) {
-	for (int32_t i = 0; i < 5; i++) {
-		for (int32_t j = 0; j < 5; j++) {
+void print_dataframe(const vector<Column<T>>& vectors) {
+	for (int32_t i = 0; i < vectors.size(); i++) {
+		for (int32_t j = 0; j < vectors[0].size(); j++) {
 			cout << vectors[i][j] << " ";
 		}
 		cout << endl;
@@ -220,16 +220,75 @@ void print_2d_vector(const vector<Column<T>>& vectors) {
 }
 
 int main() {
+	/* -------Creating DataFrame------- */
+	cout << "Empty DataFrame:\n\n";
+	DataFrame<Column, int32_t> df_empty; //-
+	print_dataframe(df_empty.get_dataframe());
+
+	/* -------Creating DataFrame with parameters------- */
+	cout << "Creating DataFrame with parameters:\n";
 	vector<Column<int32_t>> vectors(df_WIDTH, Column<int32_t>(df_HEIGHT));
-
 	create_random_table(vectors);
+	DataFrame<Column, int32_t> df(&vectors); //-
+	print_dataframe(df.get_dataframe());
+	cout << endl;
 
-	DataFrame<Column, int32_t> df(&vectors);
+	/* -------Loading data of vectors to overwrite------- */
+	cout << "Loading 2D vector to overwrite:\n";
+	vector<Column<int32_t>> vectors1(df_WIDTH, Column<int32_t>(df_HEIGHT));
+	create_random_table(vectors1);
+	df.load_data(&vectors1); //-
+	print_dataframe(df.get_dataframe());
+	cout << endl;
 
-	print_2d_vector(df.get_dataframe());
-
+	/* -------Loading data of a vector to overwrite------- */
+	cout << "Loading 1D vector to overwrite:\n";
 	Column<int32_t> vec;
 	create_random_array(vec);
-	
-	df.load_data(&vec);
+	df.load_data(vec); //-
+	print_dataframe(df.get_dataframe());
+	cout << endl;
+
+	/* -------Adding data of a vector------- */
+	cout << "Adding 1D vector to DataFrame:\n";
+	Column<int32_t> vec1;
+	create_random_array(vec1);
+	df.add_data(vec1); //-
+	print_dataframe(df.get_dataframe());
+	cout << endl;
+
+	/* -------Adding data of vectors------- */
+	cout << "Adding 2D vector to DataFrame:\n";
+	vector<Column<int32_t>> vectors2(df_WIDTH, Column<int32_t>(df_HEIGHT));
+	create_random_table(vectors2);
+	df.add_data(vectors2); //-
+	print_dataframe(df.get_dataframe());
+	cout << endl;
+
+	/* -------Adding data of a vector with column name------- */
+	cout << "Adding 1D vector to DataFrame:\n";
+	Column<int32_t> vec1;
+	create_random_array(vec1);
+	df.add_data(vec1, "col1"); //-
+	print_dataframe(df.get_dataframe());
+	cout << endl;
+
+	/* -------Adding data of vectors with column names------- */
+	cout << "Adding 2D vector to DataFrame:\n";
+	vector<Column<int32_t>> vectors2(df_WIDTH, Column<int32_t>(df_HEIGHT));
+	create_random_table(vectors2);
+	df.add_data(vectors2, { "col2", "col3", "col4", "col5", "col6" }); //-
+	print_dataframe(df.get_dataframe());
+	cout << endl;
+
+	//// Testing add_data()
+	//print_2d_vector(df.get_dataframe());
+
+	//vector<Column<int32_t>> vec(df_WIDTH, Column<int32_t>(df_HEIGHT));
+	//create_random_table(vec);
+
+	//cout << endl;
+
+	//df.load_data(&vec);
+	//print_2d_vector(df.get_dataframe());
 }
