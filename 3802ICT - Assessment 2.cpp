@@ -4,6 +4,7 @@
 #include <random>
 #include <string>
 #include <cstdint>
+#include <algorithm>
 
 using namespace std;
 
@@ -11,42 +12,57 @@ template<template<typename> typename Column, typename T>
 class DataFrame {
 private:
 	// data_vec is the storage of the data frames.
-	vector<Column<T>> data_vec;
+	vector<Column<T>> *data_vec;
 public:
 	// 1.1 - Initialisation
 	// Default constructor
-	DataFrame() {};
+	DataFrame() {
+		data_vec = new vector<Column<T>>();
+	};
 	// Parameterised constructor
-	DataFrame(vector<Column<T>> _vectors) {
+	DataFrame(vector<Column<T>> *_vectors) {
+		data_vec = new vector<Column<T>>();
 		data_vec = _vectors;
+	};
+	// Destructor
+	~DataFrame() {
+		delete data_vec;
 	};
 
 	// 1.2 - Load Data
 	// Loads vectors data into data_vec and overwrites original data
-	void load_data(vector<Column<T>> _vectors) {
+	void load_data(vector<Column<T>> *_vectors) {
+		data_vec->clear();
 		data_vec = _vectors;
 	}
-	void load_data(Column<T> _vector) {
-		data_vec = _vector;
+	void load_data(Column<T> *_vector) {
+		data_vec->clear();
+		data_vec->push_back(_vector);
 	}
 	// Adds data to the data_vec, that being a column of data.
-	void add_data(Column<T> _vector) {
-		data_vec.push_back(_vector);
+	void add_data(Column<T> *_vector) {
+		data_vec->push_back(_vector);
 	}
-	void add_data(vector<Column<T>> _vectors) {}
+	void add_data(vector<Column<T>> *_vectors) {
+		for (auto iter : _vectors) {
+			data_vec->push_back(iter);
+		}
+	}
 	void add_data(Column<T> _vector, string column_name) {}
 	void add_data(vector<Column<T>> _vectors, string column_name) {}
 
 	// 1.3 - Setting Column Names
 	void set_columns(string column_names[], uint32_t size) {
 		for (int32_t i = 0; i < size; i++) {
-			data_vec[0][i] = column_names[i];
+			data_vec->at(0).at(i) = column_names[i];
 		}
 	}
 
 	// 1.4 - Updating Column Names
 	void update_column(string old_name, string new_name) {}
-	void update_columns(uint32_t column, string name) {}
+	void update_columns(uint32_t column, string name) {
+		data_vec->at(0).at(column) = name;
+	}
 
 	// 1.5 - Updating Columns
 	void update_columnval(uint32_t column_idx, vector<T> _vector) {}
@@ -56,19 +72,22 @@ public:
 
 	// 1.6 - Get Columns
 	Column<T>& operator[](uint32_t column_idx) {
-		return data_vec[column_idx];
+		return data_vec->at(column_idx);
 	}
+	/*Column<T>& operator[](string column_name) {
+		return data_vec->at(column_idx);
+	}*/
 
 	// 1.7 - Data Frame Metadata
 	int size() {
-		return (data_vec.size() * data_vec[0].size());
+		return (data_vec.size() * data_vec[0]->size());
 	}
 	int shape() {
-		return (data_vec[0].size());
+		return (data_vec[0]->size());
 	}
 
 	vector<Column<T>> get_dataframe() {
-		return data_vec;
+		return *data_vec;
 	}
 };
 
@@ -76,22 +95,68 @@ template<typename T>
 class Column : public vector<T> {
 private:
 	vector<T> data_vector;
-public:
 	using vector<T>::vector;
-
+public:
 	Column(vector<T> _vector) {
 		vector = data_vector;
 	}
 
-	void min() {
+	int min() {
+		int min = INT_MAX;
 		for (int32_t i = 0; i < data_vector.size(); i++) {
-			cout << data_vector[i] << " ";
+			if (data_vector[i] < min) {
+				min = data_vector[i];
+			}
 		}
+		return min;
 	}
-	void max() {}
-	void mean() {}
-	void median() {}
-	void mode() {}
+	int max() {
+		int max = INT_MIN;
+		for (int32_t i = 0; i < data_vector.size(); i++) {
+			if (data_vector[i] > max) {
+				max = data_vector[i];
+			}
+		}
+		return max;
+	}
+	double mean() {
+		int sum = 0;
+		for (size_t i = 0; i < data_vector.size(); i++) {
+			sum += data_vector[i];
+		}
+		return sum / (data_vector.size());
+	}
+	int median() {
+		vector<T> _vector = data_vector;
+		sort(_vector.begin(), _vector.endf());
+		return _vector[_vector.size() / 2];
+	}
+	int mode() {
+		vector<T> _vector = data_vector;
+		sort(_vector.begin(), _vector.endf());
+
+		int max_count = 1, res = _vector[0], curr_count = 1;
+		for (int i = 1; i < n; i++) {
+			if (_vector[i] == _vector[i - 1])
+				curr_count++;
+			else {
+				if (curr_count > max_count) {
+					max_count = curr_count;
+					res = _vector[i - 1];
+				}
+				curr_count = 1;
+			}
+		}
+
+		// If last element is most frequent
+		if (curr_count > max_count)
+		{
+			max_count = curr_count;
+			res = _vector[n - 1];
+		}
+
+		return res;
+	}
 	void summary() {}
 };
 
@@ -133,7 +198,7 @@ int main() {
 
 	create_random_table(vectors);
 
-	DataFrame<Column, string> df(vectors);
+	DataFrame<Column, string> df(&vectors);
 
 	print_2d_vector(vectors);
 
@@ -143,5 +208,5 @@ int main() {
 	print_2d_vector(df.get_dataframe());
 
 	cout << "MIN:\n";
-	df[1].min();
+	df[0].min();
 }
