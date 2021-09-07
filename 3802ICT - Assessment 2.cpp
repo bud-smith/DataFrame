@@ -51,8 +51,18 @@ public:
 			data_vec->push_back(iter);
 		}
 	}
-	void add_data(Column<T> _vector, string column_name) {}
-	void add_data(vector<Column<T>> _vectors, vector<string> column_names) {}
+	void add_data(Column<T> _vector, string column_name) {
+		data_vec->push_back(_vector);
+		data_vec->back().column_name_setter(column_name);
+	}
+	void add_data(vector<Column<T>> _vectors, vector<string> column_names) {
+		int i = 0;
+		for (auto iter : _vectors) {
+			data_vec->push_back(iter);
+			data_vec->back().column_name_setter(column_names[i]);
+			i++;
+		}
+	}
 
 	// 1.3 - Setting Column Names
 	void set_columns(string column_names[], uint32_t size) {
@@ -64,7 +74,7 @@ public:
 	// 1.4 - Updating Column Names
 	void update_column(string old_name, string new_name) {}
 	void update_columns(uint32_t column, string name) {
-		data_vec->at(0).at(column) = name;
+		data_vec->at(column).column_name_setter(name);
 	}
 
 	// 1.5 - Updating Columns
@@ -267,17 +277,17 @@ int main() {
 
 	/* -------Adding data of a vector with column name------- */
 	cout << "Adding 1D vector to DataFrame:\n";
-	Column<int32_t> vec1;
-	create_random_array(vec1);
-	df.add_data(vec1, "col1"); //-
+	Column<int32_t> vec2;
+	create_random_array(vec2);
+	df.add_data(vec2, "col1"); //-
 	print_dataframe(df.get_dataframe());
 	cout << endl;
 
 	/* -------Adding data of vectors with column names------- */
 	cout << "Adding 2D vector to DataFrame:\n";
-	vector<Column<int32_t>> vectors2(df_WIDTH, Column<int32_t>(df_HEIGHT));
-	create_random_table(vectors2);
-	df.add_data(vectors2, { "col2", "col3", "col4", "col5", "col6" }); //-
+	vector<Column<int32_t>> vectors3(df_WIDTH, Column<int32_t>(df_HEIGHT));
+	create_random_table(vectors3);
+	df.add_data(vectors3, { "col2", "col3", "col4", "col5", "col6" }); //-
 	print_dataframe(df.get_dataframe());
 	cout << endl;
 
