@@ -124,7 +124,7 @@ public:
 
     // 1.7 - Data Frame Metadata
     int size() {
-        return (data_vec->size() * data_vec[0]->size());
+        return (data_vec->size() * data_vec->at(0).size());
     }
     int shape() {
         return (data_vec->size());
@@ -381,6 +381,14 @@ int main() {
     for (auto iter : df[0]) {
         print(iter);
     }
+    println("");
+    println("");
+
+    /* -------Obtaining dataframe metadata------- */
+    print("Obtaining size metadata:");
+    println(df.size());
+    print("Obtaining shape metadata:");
+    println(df.shape());
     println("");
 
     /* -------Statistical measures------- */
