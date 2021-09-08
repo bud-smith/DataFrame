@@ -5,11 +5,16 @@
 #include <string>
 #include <cstdint>
 #include <algorithm>
+#include <map>
 
 using namespace std;
 
 constexpr uint32_t df_WIDTH = 5;
 constexpr uint32_t df_HEIGHT = 5;
+
+auto scan = [](auto x) { cin >> x; };
+auto print = [](auto x) { cout << x << " "; };
+auto println = [](auto x) { cout << x << "\n"; };
 
 template<template<typename> typename Column, typename T>
 class DataFrame {
@@ -27,10 +32,6 @@ public:
         data_vec = new vector<Column<T>>();
         data_vec = _vectors;
     };
-    // Destructor
-    /*~DataFrame() {
-        delete data_vec;
-    };*/
 
     // 1.2 - Load Data
     // Loads vectors data into data_vec and overwrites original data
@@ -96,10 +97,11 @@ public:
         }
     }
     void delete_column(uint32_t column_idx) {
-        
+        data_vec->erase(data_vec->begin() + column_idx);
     }
     void delete_column(string column_name) {
-        
+        int32_t column_idx = find_column(column_name);
+        data_vec->erase(data_vec->begin() + column_idx);
     }
 
     // 1.6 - Get Columns
@@ -128,8 +130,17 @@ public:
         return (data_vec->size());
     }
 
-    vector<Column<T>> get_dataframe() {
-        return *data_vec;
+    void print_dataframe() {
+        for (int32_t i = 0; i < shape(); i++) {
+            for (int32_t j = 0; j < data_vec->at(0).size(); j++) {
+                if (j != data_vec->at(0).size() - 1) {
+                    print(data_vec->at(i)[j]);
+                }
+                else {
+                    println(data_vec->at(i)[j]);
+                }
+            }
+        }
     }
 };
 
@@ -152,39 +163,41 @@ public:
         return column_name;
     }
 
-    int min() {
-        int min = INT_MAX;
-        for (int32_t i = 0; i < data_vec.size(); i++) {
-            if (data_vec[i] < min) {
-                min = data_vec[i];
+    double min() {
+        double min = INT_MAX;
+        for (int i = 0; i < this->size(); i++) {
+            if (this->at(i) < min) {
+                min = this->at(i);
             }
         }
         return min;
     }
-    int max() {
-        int max = INT_MIN;
-        for (int32_t i = 0; i < data_vec.size(); i++) {
-            if (data_vec[i] > max) {
-                max = data_vec[i];
+    double max() {
+        double max = INT_MIN;
+        for (double i = 0; i < this->size(); i++) {
+            if (this->at(i) > max) {
+                max = this->at(i);
             }
         }
         return max;
     }
     double mean() {
-        int sum = 0;
-        for (size_t i = 0; i < data_vec.size(); i++) {
-            sum += data_vec[i];
+        double sum = 0;
+        for (double i = 0; i < this->size(); i++) {
+            sum += this->at(i);
         }
-        return sum / (data_vec.size());
+        return sum / (this->size());
     }
-    int median() {
-        vector<T> _vector = data_vec;
-        sort(_vector.begin(), _vector.endf());
+    double median() {
+        vector<T> _vector;
+        copy(this->begin(), this->end(), back_inserter(_vector));
+        sort(_vector.begin(), _vector.end());
         return _vector[_vector.size() / 2];
     }
-    int mode() {
-        vector<T> _vector = data_vec;
-        sort(_vector.begin(), _vector.endf());
+    double mode() {
+        vector<T> _vector;
+        copy(this->begin(), this->end(), back_inserter(_vector));
+        sort(_vector.begin(), _vector.end());
 
         int max_count = 1, res = _vector[0], curr_count = 1;
         for (int i = 1; i < _vector.size(); i++) {
@@ -208,8 +221,16 @@ public:
 
         return res;
     }
-    void summary() {
-    
+    map<string, double> summary() {
+        map<string, double> sum;
+
+        sum.insert(pair<string, double>("min", min()));
+        sum.insert(pair<string, double>("max", max()));
+        sum.insert(pair<string, double>("mean", mean()));
+        sum.insert(pair<string, double>("median", median()));
+        sum.insert(pair<string, double>("mode", mode()));
+
+        return sum;
     }
 };
 
@@ -239,112 +260,153 @@ void create_random_array(Column<T>& vector) {
     }
 }
 
-// Prints a 2D vector
-template<typename T>
-void print_dataframe(const vector<Column<T>>& vectors) {
-    for (int32_t i = 0; i < vectors.size(); i++) {
-        for (int32_t j = 0; j < vectors[0].size(); j++) {
-            cout << vectors[i][j] << " ";
-        }
-        cout << endl;
-    }
-}
-
 int main() {
     /* -------Creating DataFrame------- */
-    cout << "Empty DataFrame:\n\n";
+    println("Empty DataFrame:");
     DataFrame<Column, int32_t> df_empty; //-
-    print_dataframe(df_empty.get_dataframe());
+    df_empty.print_dataframe();
+    println("");
 
     /* -------Creating DataFrame with parameters------- */
-    cout << "Creating DataFrame with parameters:\n";
+    println("Creating DataFrame with parameters:");
     vector<Column<int32_t>> vectors(df_WIDTH, Column<int32_t>(df_HEIGHT));
     create_random_table(vectors);
     DataFrame<Column, int32_t> df(&vectors); //-
-    print_dataframe(df.get_dataframe());
-    cout << endl;
+    df.print_dataframe();
+    println("");;
 
     /* -------Loading data of vectors to overwrite------- */
-    cout << "Loading 2D vector to overwrite:\n";
+    println("Loading 2D vector to overwrite:");
     vector<Column<int32_t>> vectors1(df_WIDTH, Column<int32_t>(df_HEIGHT));
     create_random_table(vectors1);
     df.load_data(&vectors1); //-
-    print_dataframe(df.get_dataframe());
-    cout << endl;
+    df.print_dataframe();
+    print("\n");
 
     /* -------Loading data of a vector to overwrite------- */
-    cout << "Loading 1D vector to overwrite:\n";
+    println("Loading 1D vector to overwrite:");
     Column<int32_t> vec;
     create_random_array(vec);
     df.load_data(vec); //-
-    print_dataframe(df.get_dataframe());
-    cout << endl;
+    df.print_dataframe();
+    println("");
 
     /* -------Adding data of a vector------- */
-    cout << "Adding 1D vector to DataFrame:\n";
+    println("Adding 1D vector to DataFrame:");
     Column<int32_t> vec1;
     create_random_array(vec1);
     df.add_data(vec1); //-
-    print_dataframe(df.get_dataframe());
-    cout << endl;
+    df.print_dataframe();
+    println("");
 
     /* -------Adding data of vectors------- */
-    cout << "Adding 2D vector to DataFrame:\n";
+    println("Adding 2D vector to DataFrame:");
     vector<Column<int32_t>> vectors2(df_WIDTH, Column<int32_t>(df_HEIGHT));
     create_random_table(vectors2);
     df.add_data(vectors2); //-
-    print_dataframe(df.get_dataframe());
-    cout << endl;
+    df.print_dataframe();
+    println("");
 
     /* -------Adding data of a vector with column name------- */
-    cout << "Adding 1D vector to DataFrame with column name:\n";
+    println("Adding 1D vector to DataFrame with column name:");
     Column<int32_t> vec2;
     create_random_array(vec2);
     df.add_data(vec2, "col1"); //-
-    print_dataframe(df.get_dataframe());
-    cout << endl;
+    df.print_dataframe();
+    println("");
 
     /* -------Adding data of vectors with column names------- */
-    cout << "Adding 2D vector to DataFrame with column names:\n";
+    println("Adding 2D vector to DataFrame with column names:");
     vector<Column<int32_t>> vectors3(df_WIDTH, Column<int32_t>(df_HEIGHT));
     create_random_table(vectors3);
     df.add_data(vectors3, { "col2", "col3", "col4", "col5", "col6" }); //-
-    print_dataframe(df.get_dataframe());
-    cout << endl;
+    df.print_dataframe();
+    println("");
 
     /* -------Updating column names by overwriting indices------- */
-    cout << "Setting column names by overwriting indices of dataframe:\n";
+    println("Setting column names by overwriting indices of dataframe:");
     df.set_columns({ "col2", "col3", "col4", "col5", "col6" }, 5);
-    print_dataframe(df.get_dataframe());
-    cout << endl;
+    df.print_dataframe();
+    println("");
 
     /* -------Updating column names by finding column name and overwriting------- */
-    cout << "Updating column names by finding column name and overwriting:\n";
+    println("Updating column names by finding column name and overwriting:");
     df.update_column("col2", "col2_find_string");
-    print_dataframe(df.get_dataframe());
-    cout << endl;
+    df.print_dataframe();
+    println("");
 
     /* -------Updating column names by index value------- */
-    cout << "Updating column names by index value:\n";
+    println("Updating column names by index value:");
     df.update_column("col3", "col3_by_index");
-    print_dataframe(df.get_dataframe());
-    cout << endl;
+    df.print_dataframe();
+    println("");
 
     /* -------Replaces column at column index------- */
-    cout << "Replaces column at column index (idx[0]):\n";
+    println("Replaces column at column index (idx[0]):");
     Column<int32_t> vec3;
     create_random_array(vec3);
     df.update_columnval(0, vec3);
-    print_dataframe(df.get_dataframe());
-    cout << endl;
+    df.print_dataframe();
+    println("");
 
     /* -------Replaces column at column index------- */
-    cout << "Replaces column at column name (col4):\n";
+    println("Replaces column at column name (col4):");
     Column<int32_t> vec4;
     create_random_array(vec4);
     df.update_columnval("col4", vec4);
-    print_dataframe(df.get_dataframe());
-    cout << endl;
+    df.print_dataframe();
+    println("");
 
+    /* -------Deletes column at column index------- */
+    cout << "Deletes column at column index (idx[0]):\n";
+    df.delete_column(0);
+    df.print_dataframe();
+    println("");
 
+    /* -------Deletes column at column name------- */
+    println("Deletes column at column name (col4):");
+    df.delete_column("col4");
+    df.print_dataframe();
+    println("");
+
+    /* -------Accessing index by column name------- */
+    println("Accessing index by column name (col4):");
+    for (auto iter : df["col4"]) {
+        print(iter);
+    }
+    println("");
+
+    /* -------Accessing index by value------- */
+    println("Accessing index by value (idx[0]):");
+    for (auto iter : df[0]) {
+        print(iter);
+    }
+    println("");
+
+    /* -------Statistical measures------- */
+    println("Statistical measures:");
+    print("min:");
+    println(df[0].min());
+    print("max:");
+    println(df[0].max());
+    print("mean:");
+    println(df[0].mean());
+    print("median:");
+    println(df[0].median());
+    print("mode:");
+    println(df[0].mode());
+    println("");
+    println("Summary:");
+    map<string, double> sum = df[0].summary();
+    print(sum.find("min")->first);
+    println(sum.find("min")->second);
+    print(sum.find("max")->first);
+    println(sum.find("max")->second);
+    print(sum.find("mean")->first);
+    println(sum.find("mean")->second);
+    print(sum.find("median")->first);
+    println(sum.find("median")->second);
+    print(sum.find("mode")->first);
+    println(sum.find("mode")->second);
+    
 }
